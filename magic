@@ -1,0 +1,101 @@
+#!/bin/bash
+
+# Configure this script here:
+DEFAULT_CMD=compile
+ROOT_DIR="buildroot-2013.08.1"
+
+# Unused
+SSH_IP="192.168.29.31"
+
+#--------Script-------
+
+cd $ROOT_DIR
+
+rebuild()
+{
+        clean
+        compile
+}
+
+clean()
+{
+        saveConfigs
+        make clean
+}
+
+compile()
+{
+        loadBR
+        make
+}
+
+config()
+{
+        loadBR
+        make menuconfig
+        saveBR
+}
+
+configBB()
+{
+        make busybox-menuconfig
+        saveBB
+}
+
+configK()
+{
+        make linux-menuconfig
+        saveK
+}
+
+download()
+{
+        make source
+}
+
+#---------Config----------
+
+# Configure the right defconfigs!
+loadBR()
+{
+        make defconfig
+}
+
+saveConfigs()
+{
+        saveBR
+        saveK
+        saveBB
+}
+
+saveK()
+{
+        make linux-update-defconfig
+}
+
+saveBB()
+{
+        make busybox-update-config
+}
+
+saveBR()
+{
+        make savedefconfig
+}
+
+
+if [ $# -eq 0 ]
+then
+        command=$DEFAULT_CMD
+else	
+	command=$1
+fi
+
+if [ $(type -t "$command") == "function" ]
+then
+        echo "Running $command"
+
+        $command
+else
+        echo "Unrecognized command." 1>&2
+fi
