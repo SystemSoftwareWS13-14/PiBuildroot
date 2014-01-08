@@ -7,6 +7,11 @@ ROOT_DIR="buildroot-2013.08.1"
 # Unused
 SSH_IP="192.168.29.31"
 
+#-------Configs------
+
+CONFIG_DIR="../configs"
+SAV_BR_CONFIG="$CONFIG_DIR/br.config"
+
 #--------Script-------
 
 cd $ROOT_DIR
@@ -58,7 +63,7 @@ download()
 # Configure the right defconfigs!
 loadBR()
 {
-        make defconfig
+        make defconfig BR2_DEFCONFIG="$SAV_BR_CONFIG"
 }
 
 saveConfigs()
@@ -91,7 +96,7 @@ else
 	command=$1
 fi
 
-if [ $(type -t "$command") == "function" ]
+if [ "$(type -t "$command")" == "function" ]
 then
         echo "Running $command"
 
