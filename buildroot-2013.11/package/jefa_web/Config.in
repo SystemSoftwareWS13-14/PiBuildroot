@@ -1,0 +1,4 @@
+config BR2_PACKAGE_JEFA_WEB
+        bool "jefa_web"
+        help
+         Most epic website by jefa.

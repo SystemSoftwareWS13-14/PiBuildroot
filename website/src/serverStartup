@@ -1,0 +1,18 @@
+#!/bin/sh
+
+echo "=============================="
+echo "HTTP-server startup"
+echo
+
+echo "> Requesting IP..."
+echo
+
+udhcpc -s /etc/jefa_web/simple.script
+
+echo "> Setting up HTTP-server..."
+httpd -h /www/ &
+
+
+echo
+echo "HTTP-server startup done."
+echo "=============================="

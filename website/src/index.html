@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>ARM Embedded Linux</title>
+	        <link href="jquery-ui/css/hot-sneaks/jquery-ui-1.10.3.custom.css" rel="stylesheet" />
+	        <script src="jquery-ui/js/jquery-1.9.1.js"></script>
+        	<script src="jquery-ui/js/jquery-ui-1.10.3.custom.js"></script>
+		<script>
+			$(function() {
+				$("#menu").tabs({
+					show: true,
+					heightStyle: "content"
+				});
+				$("#reboot").button({
+						icons: {primary: "ui-icon-power"}
+				}).click(reboot_click);
+				$("#deltmp").button({
+                                                icons: {primary: "ui-icon-trash"}
+                                }).click(deltmp_click);
+				uptime_refresh();
+				setInterval(uptime_refresh, 1000);
+				status_refresh();
+				setInterval(status_refresh, 1000);
+			});
+			
+			function deltmp_click(event) {
+				$.ajax({
+                                        type:"post",
+                                        url:"cgi-bin/deltmp",
+                                        success:function() {
+                                                alert("Deleted tmp files.");
+                                        }
+                                });
+			}
+
+			function reboot_click(event) {
+				$.ajax({
+    					type:"post",
+    					url:"cgi-bin/reboot",
+    					complete:function() {
+						alert("Rebooting...");
+					}
+				});
+			}
+
+			function uptime_refresh() {
+				$.ajax({
+    					type:"post",
+    					url:"cgi-bin/uptime",
+    					success:function(data) {
+						$("#uptime").html(data);
+					}
+				});
+			}
+
+			function status_refresh() {
+				$.ajax({
+                                        type:"post",
+                                        url:"cgi-bin/status",
+                                        success:function(data) {
+                                                $("#status").html(data);
+                                        }
+                                });
+			}
+		</script>
+		<style>
+			body {
+				margin-left:auto;
+				margin-right:auto;
+				width:90%;
+				background-color:#CEE3F6;
+			}
+			#uptime {	
+				text-align:center;
+				color:black;
+				border:2px solid;
+				border-radius:10px;
+			}
+			#status {
+				border:1px solid;
+				border-radius:10px;
+				margin-top:10px;
+				margin-bottom:10px;
+				margin-right:10px;
+				margin-left:10px;
+			}
+		</style>
+   	</head>
+	<body>
+		<div id="menu">
+			<ul>
+				<li><a href="cgi-bin/osinfo">OS Info</a></li>
+				<li><a href="cgi-bin/sysinfo">System Info</a></li>
+				<li><a href="cgi-bin/netinfo">Network Info</a></li>
+				<li><a href="#status">Status</a></li>
+				<li><a href="#action">Actions</a></li>
+			</ul>
+			<div id="action">
+				<button id="reboot">Reboot</button>
+				<button id="deltmp">Delete tmp files</button>
+			</div>
+			<div id="status"></div>
+		</div>
+		<br />
+		<div id="uptime"></div>
+	</body>
+</html>
