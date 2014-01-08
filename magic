@@ -30,6 +30,7 @@ clean()
 
 compile()
 {
+	repack
         loadBR
         make
 	copy
@@ -54,10 +55,35 @@ configK()
         saveK
 }
 
+repack()
+{
+	rmPack
+	pack
+}
+
+rmPack()
+{
+	rm -f dl/jefa_web.tar.gz
+
+	rm -f -r output/build/jefa_web-1.0/
+}
+
+pack()
+{
+        cd ../website
+        tar -czf jefa_web.tar.gz src
+        cd ../$ROOT_DIR
+}
+
 copy()
 {
 	cp -f output/images/uImage /srv/tftp/rpi/uImage-7
 	echo "copied image to tftp"
+}
+
+ssh()
+{
+	ssh -oBatchMode=yes -oStrictHostKeyChecking=no root@$SSH_IP
 }
 
 download()
