@@ -32,6 +32,7 @@ compile()
 {
         loadBR
         make
+	copy
 }
 
 config()
@@ -51,6 +52,12 @@ configK()
 {
         make linux-menuconfig
         saveK
+}
+
+copy()
+{
+	cp -f output/images/uImage /srv/tftp/rpi/uImage-7
+	echo "copied image to tftp"
 }
 
 download()
