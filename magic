@@ -2,7 +2,7 @@
 
 # Configure this script here:
 DEFAULT_CMD=compile
-ROOT_DIR="buildroot-2013.08.1"
+ROOT_DIR="buildroot-2013.11"
 
 # Unused
 SSH_IP="192.168.29.31"
