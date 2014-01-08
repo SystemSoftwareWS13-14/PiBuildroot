@@ -5,7 +5,7 @@ DEFAULT_CMD=compile
 ROOT_DIR="buildroot-2013.11"
 
 # Unused
-SSH_IP="192.168.29.31"
+SSH_IP="141.37.31.27"
 
 #-------Configs------
 
@@ -81,7 +81,7 @@ copy()
 	echo "copied image to tftp"
 }
 
-ssh()
+control()
 {
 	ssh -oBatchMode=yes -oStrictHostKeyChecking=no root@$SSH_IP
 }

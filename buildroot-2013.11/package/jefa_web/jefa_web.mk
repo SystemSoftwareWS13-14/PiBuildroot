@@ -7,7 +7,7 @@
 JEFA_WEB_VERSION = 1.0
 JEFA_WEB_SOURCE = jefa_web.tar.gz
 JEFA_WEB_SITE_METHOD = file
-JEFA_WEB_SITE = ~/systemarm/ARMBuildroot/website
+JEFA_WEB_SITE = ~/systemarm/PiBuildroot/website
 
 define JEFA_WEB_INSTALL_TARGET_CMDS
   mkdir -p $(TARGET_DIR)/www
