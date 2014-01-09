@@ -1,0 +1,4 @@
+#!/bin/sh
+
+echo "Registering mdev as hotplug..."
+echo "/sbin/mdev" > /proc/sys/kernel/hotplug

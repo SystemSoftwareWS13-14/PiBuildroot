@@ -1,0 +1,26 @@
+export ARCH = arm
+export CROSS_COMPILE = /opt/toolchains/gcc-linaro-arm-linux-gnueabihf-raspbian/bin/arm-linux-gnueabihf-
+OUT = $(shell pwd)/../bin
+
+KERNELVERSION=3.10.7
+KDIR := ../../buildroot-2013.08.1/output/build/linux-$(KERNELVERSION)/
+MODDIR = ../../rootfs_files/lib/modules/$(KERNELVERSION)
+MKDIR = mkdir -p
+CP = cp
+
+.PHONY: all clean install
+
+all:
+	$(MAKE) -C $(KDIR) M=$$PWD
+
+clean:
+	$(MAKE) -C $(KDIR) M=$$PWD clean
+
+install: all $(MODDIR)
+	$(CP) *.ko $(MODDIR)
+
+$(OUT):
+	$(MKDIR) $(OUT)
+
+$(MODDIR):
+	$(MKDIR) $(MODDIR)

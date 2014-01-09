@@ -11,7 +11,7 @@
 
 #define LED_PATH "/sys/class/gpio/gpio18/value"
 #define BUTTON_PATH "/sys/class/gpio/gpio17/value"
-#define HZ 5
+#define HZ 10
 
 static volatile int should_blink = 1;
 static volatile int led_fd;
@@ -79,7 +79,7 @@ void *check_button(void *data)
 	char buffer[2];
 	struct timespec wait = {
 		.tv_sec = 0,
-		.tv_nsec = 10000000
+		.tv_nsec = 1000000
 	};
 
 	pressed = 0;
