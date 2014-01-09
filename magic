@@ -106,7 +106,7 @@ install()
 
 	#copy scripts
 	cd ../../scripts
-	cp S98initLED_TAST S97mdev_hotplug ../rootfs_files/etc/init.d/
+	cp S98initLED_TAST S97mdev_hotplug S96insert_modules ../rootfs_files/etc/init.d/
 	cp led.sh ../rootfs_files/usr/share/
 	cd ../$ROOT_DIR
 }
