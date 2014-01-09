@@ -11,6 +11,8 @@ SSH_IP="141.37.31.27"
 
 CONFIG_DIR="../configs"
 SAV_BR_CONFIG="$CONFIG_DIR/br.config"
+APP_SRC="../app/src"
+SCRIPTS_DIR="../scripts"
 
 #--------Script-------
 
@@ -84,6 +86,30 @@ copy()
 control()
 {
 	ssh -oBatchMode=yes -oStrictHostKeyChecking=no root@$SSH_IP
+}
+
+install()
+{
+	copy_files
+
+	install_live
+}
+
+copy_files()
+{
+	#install apps
+	cd "../app/src"
+	make install
+
+	#copy scripts
+	cd ../../scripts
+	cp S98initLED_TAST ../rootfs_files/usr/share/
+	cd ../$ROOT_DIR
+}
+
+install_live()
+{
+	scp -oBatchMode=yes -oStrictHostKeyChecking=no -r ../rootfs_files/* root@$SSH_IP:/
 }
 
 download()
