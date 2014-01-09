@@ -88,14 +88,13 @@ control()
 	ssh -oBatchMode=yes -oStrictHostKeyChecking=no root@$SSH_IP
 }
 
-install()
+live()
 {
 	copy_files
-
 	install_live
 }
 
-copy_files()
+install()
 {
 	#install apps
 	cd ../app/src

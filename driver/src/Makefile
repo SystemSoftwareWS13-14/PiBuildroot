@@ -2,8 +2,8 @@ export ARCH = arm
 export CROSS_COMPILE = /opt/toolchains/gcc-linaro-arm-linux-gnueabihf-raspbian/bin/arm-linux-gnueabihf-
 OUT = $(shell pwd)/../bin
 
-KERNELVERSION=3.10.7
-KDIR := ../../buildroot-2013.08.1/output/build/linux-$(KERNELVERSION)/
+KERNELVERSION=1587f77
+KDIR := ../../buildroot-2013.11/output/build/linux-$(KERNELVERSION)/
 MODDIR = ../../rootfs_files/lib/modules/$(KERNELVERSION)/extra
 MKDIR = mkdir -p
 CP = cp
