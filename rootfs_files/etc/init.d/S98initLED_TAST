@@ -1,0 +1,7 @@
+#!/bin/sh
+
+#pin11 = taster
+TAST_PIN=11
+
+echo "$TAST_PIN" > /sys/class/gpio/export
+echo "in" > sys/class/gpio/gpio$TAST_PIN/direction
