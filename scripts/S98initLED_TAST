@@ -1,7 +1,7 @@
 #!/bin/sh
 
-#pin11 = taster
-TAST_PIN=11
+#pin11 = gpio17
+TAST_GPIO=17
 
-echo "$TAST_PIN" > /sys/class/gpio/export
-echo "in" > sys/class/gpio/gpio$TAST_PIN/direction
+echo "$TAST_GPIO" > /sys/class/gpio/export
+echo "in" > sys/class/gpio/gpio$TAST_GPIO/direction
