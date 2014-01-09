@@ -27,6 +27,9 @@ install: all $(INSTALL_DIR)
 $(BIN_DIR)/%: %.c
 	$(CC) $(CFLAGS) $^ -o $@
 
+$(BIN_DIR)/led5: led5.c
+	$(CC) $(CFLAGS) -pthread -lrt $^ -o $@
+
 $(BIN_DIR):
 	$(MKDIR) $(BIN_DIR)
 
