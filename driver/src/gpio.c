@@ -7,6 +7,7 @@
 #include <asm/barrier.h>
 #include <asm/io.h>
 #include <asm/uaccess.h>
+#include <linux/ioport.h>
 
 #define DRIVER_NAME "gpio_syso"
 #define DRIVER_FILE_NAME "mygpio"
@@ -14,25 +15,22 @@
 #define START_MINOR 0
 #define MINOR_COUNT 1
 
-#define GPIO_REG_SIZE 3
+#define REG_GPIO_COUNT 10
+#define REG_GPIO_SIZE 3
 
 #define IN_GPIO 17
-#define IN_CLR_DIR_BIT_MASK 0xFF1FFFFF
-#define IN_BIT_MASK 0xFFFEFFFF
-
-
 #define OUT_GPIO 25
-//direction bitmasks
-#define OUT_CLR_DIR_BIT_MASK 0xFFF1FFFF
-#define OUT_SET_DIR_BIT_MASK 0x00020000
-//value bitmasks
-#define OUT_SET_VAL_BIT_MASK 0x01000000
-#define OUT_CLR_VAL_BIT_MASK 0xFEFFFFFF
 
-#define GPFSEL1 0xF2200004
-#define GPFSEL2 0xF2200008
-#define GPFSET0 0xF220001c
-#define GPFCLR0 0xF2200028
+#define GPFSEL(pin) (u32*)(gpio + (pin / 10))
+#define GPFSET(pin) (u32*)(gpio + 7 + (pin / 32))
+#define GPFCLR(pin) (u32*)(gpio + 10 + (pin / 32)) 
+
+#define BCM2708_PERI_BASE 0x20000000
+#define GPIO_BASE (BCM2708_PERI_BASE + 0x200000)
+#define MEM_REG_LEN 4096
+
+static void *mem;
+static volatile unsigned *gpio;
 
 static struct file_operations fops;
 static dev_t treiber_dev;
@@ -48,6 +46,13 @@ static int close(struct inode *inode, struct file *filp);
 static ssize_t read(struct file *filp, char *buff, size_t count, loff_t *offp);
 static ssize_t write(struct file *filp, const char *buff, size_t count, loff_t *offp);
 
+static int is_buff_zero(const char *buff, int count);
+static int is_buff_one(const char *buff, int count);
+static int setup_gpio(void);
+
+static void gpio_set_as_output(int pin);
+static void gpio_set_as_input(int pin);
+
 // File operations
 static struct file_operations fops = {
 	.write = write,
@@ -61,6 +66,8 @@ static int __init mod_init(void)
 	printk("mod_init called\n");
 
 	if(register_driver())
+		return -EIO;
+	if(setup_gpio())
 		return -EIO;
 	return 0;
 	
@@ -109,6 +116,7 @@ static void __exit mod_exit(void)
 	printk("mod_exit called\n");
 
 	unregister_driver();
+	release_mem_region(GPIO_BASE, MEM_REG_LEN);
 
 	pr_info("unregistered driver\n");
 }
@@ -123,24 +131,13 @@ static void unregister_driver(void)
 
 static int open(struct inode *inode, struct file *filp)
 {
-	u32 *ptr;
-	u32 old_value; 
- 
 	//set in
-	ptr = (u32 *)GPFSEL1;
-	old_value = readl(ptr);
-	rmb();
-	old_value = old_value & IN_CLR_DIR_BIT_MASK;
-	wmb();
-	writel(old_value, ptr);
+	printk(KERN_DEBUG "opening 'in'\n");
+	gpio_set_as_input(IN_GPIO);
 
 	//set out
-	ptr = (u32 *)GPFSEL2;
-	old_value = readl(ptr);
-	rmb(); 
-	old_value = old_value & OUT_CLR_DIR_BIT_MASK;
-	wmb();
-	writel(old_value | OUT_SET_DIR_BIT_MASK, ptr);
+	printk(KERN_DEBUG "opening 'out'\n");
+	gpio_set_as_output(OUT_GPIO);
 
 	return 0;
 }
@@ -154,51 +151,135 @@ static ssize_t read(struct file *filp, char *buff, size_t count, loff_t *offp)
 {
 	char result[2];
 	int not_copied, to_copy;
-	u32 value;
+	u32 value, bitmask;
+	u32 *ptr;
 
-	u32 *ptr = (u32 *) GPFSET0;
-	value = *ptr & IN_BIT_MASK;
+	//read from gpio17
+	ptr = GPFCLR(IN_GPIO);
+	//shift one 
 	
-	if(value == 0)
+	value = readl(ptr) ;
+	rmb();
+	bitmask = 0x1 << IN_GPIO;
+	value = value & bitmask;
+	printk(KERN_DEBUG "gpio read -> %.8x\n", value);
+
+	if(value != bitmask)
 		strcpy(result,"0");
-	else if(value == 1)
-		strcpy(result,"1");
 	else
-		return -EAGAIN;
+		strcpy(result,"1");
 
 	to_copy = min((int) count , 2);
 	not_copied = copy_to_user(buff, result, to_copy);
 	
-	return to_copy - not_copied;
+	return 0;//to_copy - not_copied;
 }
 
 static ssize_t write(struct file *filp, const char *buff, size_t count, loff_t *offp)
 {
-	u32 *ptr_clear;
-	u32 *ptr_set;
+	u32 *ptr;
+	u32 value, bitmask;
 
-	if(count < 2)
-		return -EAGAIN;	
+	printk(KERN_DEBUG "write: %s\n", buff);
 
-	if(strcmp(buff, "0") == 0)
+	if(is_buff_zero(buff, count))
 	{
 		//put zero on leitung
-		ptr_set = (u32 *) GPFCLR0;
-		ptr_clear = (u32 *) GPFSET0;
+		printk(KERN_DEBUG "write is zero\n");
+		ptr = GPFCLR(OUT_GPIO);
 	}
-	else if(strcmp(buff, "1") == 0)
+	else if(is_buff_one(buff, count))
 	{
 		//put one on leitung
-		ptr_set = (u32 *) GPFSET0;
-		ptr_clear = (u32 *) GPFCLR0;
+		printk(KERN_DEBUG "write is one\n");
+		ptr = GPFSET(OUT_GPIO);
 	}
 	else
-		return -EAGAIN;
-	
-	writel(*ptr_set | OUT_SET_VAL_BIT_MASK, ptr_set);
-	writel(*ptr_clear & OUT_CLR_VAL_BIT_MASK, ptr_clear);
+		return -EINVAL;
+	rmb();
+	value = readl(ptr);
+	rmb();
+	bitmask = 0x1 << OUT_GPIO;
+	printk(KERN_DEBUG "write bitmask (set) %.8x\n", bitmask);
+	value = value | bitmask;
+	wmb();
+	writel(value, ptr);
 
+	return count;
+}
+
+static int is_buff_zero(const char *buff, int count)
+{
+	if(count <= 0)
+		return 0;
+
+	return buff[0] == '0';
+}
+
+static int is_buff_one(const char *buff, int count)
+{
+	if(count <= 0)
+		return 0;
+	
+	return buff[0] == '1';
+}
+
+static int setup_gpio(void)
+{
+	mem = request_mem_region(GPIO_BASE, MEM_REG_LEN, "mygpio");
+	if(mem == NULL)
+	{
+		printk(KERN_INFO "mem region not got\n");
+		return -EBUSY;
+	}
+
+   	gpio = ioremap(GPIO_BASE, MEM_REG_LEN);
+	if(gpio == NULL)
+	{
+		printk(KERN_INFO "gpio not got\n");
+		release_mem_region(GPIO_BASE, MEM_REG_LEN);
+		return -EBUSY;
+	}
 	return 0;
+}
+
+static void gpio_set_as_input(int pin)
+{
+	u32 *ptr;
+	u32 value, bitmask;
+
+	ptr = GPFSEL(pin);
+	value = readl(ptr);
+	rmb();
+
+	//shift at right position
+	bitmask = 0x7 << ((pin % REG_GPIO_COUNT) * REG_GPIO_SIZE);
+	//invert
+	bitmask ^= 0xFFFFFFFF;
+
+ 	printk(KERN_DEBUG "in bitmask %.8x\n", bitmask);
+
+	value = value & bitmask;
+	wmb();
+	writel(value, ptr);
+}
+
+static void gpio_set_as_output(int pin)
+{
+	u32 *ptr;
+	u32 value, bitmask;
+
+	gpio_set_as_input(pin);
+
+	ptr = GPFSEL(pin);
+	value = readl(ptr);
+	rmb();
+	
+	bitmask = 0x1 << ((pin % REG_GPIO_COUNT) * REG_GPIO_SIZE);
+
+	printk(KERN_DEBUG "out bitmask %.8x\n", bitmask);
+	wmb();
+	writel(value | bitmask, ptr);
 }
 
 module_init(mod_init);

@@ -90,7 +90,7 @@ control()
 
 live()
 {
-	copy_files
+	install
 	install_live
 }
 
