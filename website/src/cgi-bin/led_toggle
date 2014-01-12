@@ -1,0 +1,12 @@
+#!/bin/sh
+
+LED_GPIO=18
+LED_VALUE="/sys/class/gpio/gpio$LED_GPIO/value"
+
+led_status=$(cat $LED_VALUE)
+if [ "$led_status" = "0" ]
+then
+	echo "1" > "$LED_VALUE"
+else
+	echo "0" > "$LED_VALUE"
+fi

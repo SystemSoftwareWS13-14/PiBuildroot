@@ -17,10 +17,23 @@
 				$("#deltmp").button({
                                                 icons: {primary: "ui-icon-trash"}
                                 }).click(deltmp_click);
+				$("#led_toggle").button({
+                                                icons: {primary: "ui-icon-lightbulb"}
+                                }).click(led_toggle_click);
+				$("#btn_toggle").button({
+                                                icons: {primary: "ui-icon-circle-arrow-s"}
+                                }).click(btn_toggle_click);
 				uptime_refresh();
 				setInterval(uptime_refresh, 1000);
 				status_refresh();
 				setInterval(status_refresh, 1000);
+				led_refresh();
+                                setInterval(led_refresh, 1000);
+				btn_refresh();
+                                setInterval(btn_refresh, 1000);
+
+				drawCircle(document.getElementById("led_status"), "grey");
+				drawCircle(document.getElementById("btn_status"), "grey");
 			});
 			
 			function deltmp_click(event) {
@@ -43,6 +56,26 @@
 				});
 			}
 
+			function led_toggle_click(event) {
+				$.ajax({
+    					type:"post",
+    					url:"cgi-bin/led_toggle",
+    					complete:function() {
+						//alert("");
+					}
+				});
+			}
+
+			function btn_toggle_click(event) {
+				$.ajax({
+    					type:"post",
+    					url:"cgi-bin/btn_toggle",
+    					complete:function() {
+						//alert("");
+					}
+				});
+			}
+
 			function uptime_refresh() {
 				$.ajax({
     					type:"post",
@@ -61,6 +94,55 @@
                                                 $("#status").html(data);
                                         }
                                 });
+			}
+
+			function led_refresh() {
+				$.ajax({
+                                        type:"post",
+                                        url:"cgi-bin/led_status",
+                                        success:function(data) {
+						if ($.trim(data) == "on") {
+							drawCircle(
+								document.getElementById("led_status"),
+								"green");	
+						} else if ($.trim(data) == "off") {
+							drawCircle(
+								document.getElementById("led_status"),
+								"red");	
+						} else
+							drawCircle(
+                                                                document.getElementById("led_status"),
+                                                                "grey");
+                                        }
+                                });
+			}
+
+			function btn_refresh() {
+				$.ajax({
+                                        type:"post",
+                                        url:"cgi-bin/btn_status",
+                                        success:function(data) {
+						if ($.trim(data) == "pressed") {
+							drawCircle(
+								document.getElementById("btn_status"),
+								"green");	
+						} else if ($.trim(data) == "released") {
+							drawCircle(
+								document.getElementById("btn_status"),
+								"red");	
+						} else
+							drawCircle(
+								document.getElementById("btn_status"),
+								"grey");	
+                                        }
+                                });
+			}
+
+			function drawCircle(element, color) {
+				var c = element;
+				var ctx=c.getContext("2d");
+				ctx.fillStyle=color;
+				ctx.fillRect(5,15,150,100);
 			}
 		</script>
 		<style>
@@ -94,12 +176,24 @@
 				<li><a href="cgi-bin/netinfo">Network Info</a></li>
 				<li><a href="#status">Status</a></li>
 				<li><a href="#action">Actions</a></li>
+				<li><a href="#gpio_control">GPIO-Control</a></li>
 			</ul>
 			<div id="action">
 				<button id="reboot">Reboot</button>
 				<button id="deltmp">Delete tmp files</button>
 			</div>
 			<div id="status"></div>
+			<div id="gpio_control">
+				<button id="led_toggle">Toggle LED</button>
+				<canvas id="led_status" width="40" height="40">
+					Your browser does not support the HTML5 canvas tag.
+				</canvas>
+				<br />
+				<button id="btn_toggle">Toggle Button</button>	
+				<canvas id="btn_status" width="40" height="40">
+					Your browser does not support the HTML5 canvas tag.
+				</canvas>
+			</div>
 		</div>
 		<br />
 		<div id="uptime"></div>
