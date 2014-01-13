@@ -8,6 +8,7 @@
 #include <asm/io.h>
 #include <asm/uaccess.h>
 #include <linux/ioport.h>
+#include <linux/slab.h>
 
 #define DRIVER_NAME "gpio_syso"
 #define DRIVER_FILE_NAME "mygpio"
@@ -24,12 +25,13 @@
 #define GPFSEL(pin) (u32*)(gpio + (pin / 10))
 #define GPFSET(pin) (u32*)(gpio + 7 + (pin / 32))
 #define GPFCLR(pin) (u32*)(gpio + 10 + (pin / 32)) 
+#define GPFLEV(pin) (u32*)(gpio + 13 + (pin / 32))
 
 #define BCM2708_PERI_BASE 0x20000000
 #define GPIO_BASE (BCM2708_PERI_BASE + 0x200000)
 #define MEM_REG_LEN 4096
 
-static void *mem;
+//static void *mem;
 static volatile unsigned *gpio;
 
 static struct file_operations fops;
@@ -44,7 +46,7 @@ static void unregister_driver(void);
 static int open(struct inode *inode, struct file *filp);
 static int close(struct inode *inode, struct file *filp);
 static ssize_t read(struct file *filp, char *buff, size_t count, loff_t *offp);
-static ssize_t write(struct file *filp, const char *buff, size_t count, loff_t *offp);
+static ssize_t write(struct file *filp, const char *buf, size_t count, loff_t *offp);
 
 static int is_buff_zero(const char *buff, int count);
 static int is_buff_one(const char *buff, int count);
@@ -139,46 +141,59 @@ static int open(struct inode *inode, struct file *filp)
 	printk(KERN_DEBUG "opening 'out'\n");
 	gpio_set_as_output(OUT_GPIO);
 
+	filp->private_data = kmalloc(sizeof(int), GFP_KERNEL);
+	*((int*)filp->private_data) = 0;
+
 	return 0;
 }
 
 static int close(struct inode *inode, struct file *filp)
 {
+	kfree(filp->private_data);
 	return 0;
 }
 
 static ssize_t read(struct file *filp, char *buff, size_t count, loff_t *offp)
 {
-	char result[2];
+	char result[10];
 	int not_copied, to_copy;
 	u32 value, bitmask;
 	u32 *ptr;
+	
+	if(  *((int*) filp->private_data) )
+		return 0;
 
-	//read from gpio17
-	ptr = GPFCLR(IN_GPIO);
-	//shift one 
+	//read from ingpio
+	ptr = GPFLEV(IN_GPIO);
 	
 	value = readl(ptr) ;
+	printk(KERN_DEBUG "gpio read -> %.8x\n", value);
 	rmb();
 	bitmask = 0x1 << IN_GPIO;
 	value = value & bitmask;
 	printk(KERN_DEBUG "gpio read -> %.8x\n", value);
 
 	if(value != bitmask)
-		strcpy(result,"0");
+		strcpy(result,"0\n\0");
 	else
-		strcpy(result,"1");
+		strcpy(result,"1\n\0");
 
-	to_copy = min((int) count , 2);
+	to_copy = min( count , strlen(result) + 1);
 	not_copied = copy_to_user(buff, result, to_copy);
-	
-	return 0;//to_copy - not_copied;
+
+	*((int*)filp->private_data) = 1;	
+
+	return to_copy - not_copied;
 }
 
-static ssize_t write(struct file *filp, const char *buff, size_t count, loff_t *offp)
+static ssize_t write(struct file *filp, const char *buf, size_t count, loff_t *offp)
 {
 	u32 *ptr;
 	u32 value, bitmask;
+	char buff[count];
+	int not_copied;
+
+	not_copied = copy_from_user(buff, buf, count);
 
 	printk(KERN_DEBUG "write: %s\n", buff);
 
@@ -196,12 +211,11 @@ static ssize_t write(struct file *filp, const char *buff, size_t count, loff_t *
 	}
 	else
 		return -EINVAL;
-	rmb();
-	value = readl(ptr);
+	
 	rmb();
 	bitmask = 0x1 << OUT_GPIO;
 	printk(KERN_DEBUG "write bitmask (set) %.8x\n", bitmask);
-	value = value | bitmask;
+	value = bitmask;
 	wmb();
 	writel(value, ptr);
 
@@ -226,12 +240,12 @@ static int is_buff_one(const char *buff, int count)
 
 static int setup_gpio(void)
 {
-	mem = request_mem_region(GPIO_BASE, MEM_REG_LEN, "mygpio");
+	/*mem = request_mem_region(GPIO_BASE, MEM_REG_LEN, "mygpio");
 	if(mem == NULL)
 	{
 		printk(KERN_INFO "mem region not got\n");
 		return -EBUSY;
-	}
+	}*/
 
    	gpio = ioremap(GPIO_BASE, MEM_REG_LEN);
 	if(gpio == NULL)

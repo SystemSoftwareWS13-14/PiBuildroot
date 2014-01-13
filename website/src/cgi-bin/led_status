@@ -1,6 +1,6 @@
 #!/bin/sh
 
-LED_GPIO=18
+LED_GPIO=25
 LED_VALUE="/sys/class/gpio/gpio$LED_GPIO/value"
 
 led_status=$(cat $LED_VALUE)
@@ -8,7 +8,7 @@ led_status=$(cat $LED_VALUE)
 echo
 if [ "$led_status" = "0" ]
 then
-        echo "off"
-else
         echo "on"
+else
+        echo "off"
 fi

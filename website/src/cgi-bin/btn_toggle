@@ -2,8 +2,12 @@
 
 BTN_GPIO=17
 BTN_VALUE="/sys/class/gpio/gpio$BTN_GPIO/value"
+BTN_DIRECTION="/sys/class/gpio/gpio$BTN_GPIO/direction"
 
 btn_status=$(cat $BTN_VALUE)
+
+#echo "out" > $BTN_DIRECTION
+
 if [ "$btn_status" = "0" ]
 then
         echo "1" > "$BTN_VALUE"
