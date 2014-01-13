@@ -1,0 +1,4 @@
+config BR2_PACKAGE_JEFA_GPIO
+        bool "jefa_gpio"
+        help
+         Most epic gpio driver by jefa.
