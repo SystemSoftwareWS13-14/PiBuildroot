@@ -9,12 +9,15 @@
 #include <signal.h>
 #include <stdlib.h>
 
-#define LED_PATH "/sys/class/gpio/gpio18/value"
-#define BUTTON_PATH "/sys/class/gpio/gpio25/value"
-#define HZ 10
+#define DEV_PATH "/dev/mygpio"
+#define LED_PATH DEV_PATH
+#define BUTTON_PATH DEV_PATH
+#define HZ 5
+#define HZ_STEP 10
 
-static volatile int should_blink = 1;
 static volatile int led_fd;
+static volatile int btn_fd;
+static volatile int hz;
 
 void *blink_led(void *data);
 void *check_button(void *data);
@@ -25,6 +28,7 @@ int main(int argc, char **argv)
 	int *retval;
 	pthread_t threads[2];
 		
+	led_fd = open(LED_PATH, O_WRONLY);
 	signal(SIGINT, sigfunc);
 
 	if(pthread_create(threads, NULL, blink_led, NULL))
@@ -46,20 +50,14 @@ void *blink_led(void *data)
 		.tv_sec = 0,
 		.tv_nsec = 1000000000/HZ
 	};
-	
+
+	hz = HZ;	
 	on = 0;
 	while(1)
 	{
-		clock_nanosleep(CLOCK_REALTIME, 0, &wait, NULL);
-		if(!should_blink)
-			continue;
+		wait.tv_nsec = 1000000000/hz;
 
-		led_fd = open(LED_PATH, O_WRONLY);
-		if(led_fd < 0)
-		{
-			perror("could not open LED-file");
-			continue;
-		}
+		clock_nanosleep(CLOCK_REALTIME, 0, &wait, NULL);
 
 		sprintf(buf, "%d", on);
 		write(led_fd, buf, 2);
@@ -68,14 +66,13 @@ void *blink_led(void *data)
 			on = 0;
 		else
 			on = 1;
-		close(led_fd);
 	}
 	return 0;
 }
 
 void *check_button(void *data)
 {
-	int fd, pressed;
+	int pressed;
 	char buffer[2];
 	struct timespec wait = {
 		.tv_sec = 0,
@@ -85,29 +82,22 @@ void *check_button(void *data)
 	pressed = 0;
 
 	while (1) {
-
-		fd = open(BUTTON_PATH, O_RDONLY);
-		if(fd < 0)
-		{
-			perror("could not open BUTTON-file!");
-			continue;
-		}
-
-		read(fd, buffer, 1);
+		btn_fd = open(BUTTON_PATH, O_RDONLY);
+		read(btn_fd, buffer, 2);
+		close(btn_fd);
 
 		if(strcmp(buffer, "0") == 0 && !pressed)
 		{
 			pressed = 1;
-			printf("Button pressed!\n");
+			printf("Pressed\n");
 		}
-		if(strcmp(buffer, "1") == 0 && pressed)
+		else if(strcmp(buffer, "1") == 0 && pressed)
 		{
 			pressed = 0;
-			printf("Button released!\n");
-			should_blink = !should_blink;
+			hz += HZ_STEP;
+			printf("Released\n");
 		}
 
-		close(fd);
 		clock_nanosleep(CLOCK_REALTIME, 0, &wait, NULL);
 	}
 	return 0;
@@ -115,16 +105,8 @@ void *check_button(void *data)
 
 void sigfunc(int sig)
 {
-	int fd;
-
-	fd = open(LED_PATH, O_WRONLY);
-	if(fd < 0)
-	{
-		perror("could not open");
-		fd = led_fd;
-	}
-
-	write(fd, "1", 2);
+	write(led_fd, "1", 2);
+	close(led_fd);
 
 	exit(0);
 }

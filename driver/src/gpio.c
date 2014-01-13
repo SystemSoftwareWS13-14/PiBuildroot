@@ -19,8 +19,8 @@
 #define REG_GPIO_COUNT 10
 #define REG_GPIO_SIZE 3
 
-#define IN_GPIO 17
-#define OUT_GPIO 25
+#define IN_GPIO 25
+#define OUT_GPIO 18
 
 #define GPFSEL(pin) (u32*)(gpio + (pin / 10))
 #define GPFSET(pin) (u32*)(gpio + 7 + (pin / 32))
@@ -174,9 +174,9 @@ static ssize_t read(struct file *filp, char *buff, size_t count, loff_t *offp)
 	printk(KERN_DEBUG "gpio read -> %.8x\n", value);
 
 	if(value != bitmask)
-		strcpy(result,"0\n\0");
+		strcpy(result,"0");
 	else
-		strcpy(result,"1\n\0");
+		strcpy(result,"1");
 
 	to_copy = min( count , strlen(result) + 1);
 	not_copied = copy_to_user(buff, result, to_copy);

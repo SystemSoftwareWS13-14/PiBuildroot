@@ -30,6 +30,15 @@ $(BIN_DIR)/%: %.c
 $(BIN_DIR)/led5: led5.c
 	$(CC) $(CFLAGS) -pthread -lrt $^ -o $@
 
+$(BIN_DIR)/led250: led250.c
+	$(CC) $(CFLAGS) -pthread -lrt $^ -o $@
+
+$(BIN_DIR)/ledmax: ledmax.c
+	$(CC) $(CFLAGS) -pthread -lrt $^ -o $@
+
+$(BIN_DIR)/ledflip: ledflip.c
+	$(CC) $(CFLAGS) -pthread -lrt $^ -o $@
+
 $(BIN_DIR):
 	$(MKDIR) $(BIN_DIR)
 

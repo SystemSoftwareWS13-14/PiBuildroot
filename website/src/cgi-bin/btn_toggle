@@ -1,6 +1,6 @@
 #!/bin/sh
 
-BTN_GPIO=17
+BTN_GPIO=25
 BTN_VALUE="/sys/class/gpio/gpio$BTN_GPIO/value"
 BTN_DIRECTION="/sys/class/gpio/gpio$BTN_GPIO/direction"
 

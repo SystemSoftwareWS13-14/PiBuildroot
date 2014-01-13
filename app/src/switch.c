@@ -4,7 +4,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <string.h>
-#define PIN_FILE "/sys/class/gpio/gpio17/value"
+#define PIN_FILE "/sys/class/gpio/gpio25/value"
 
 int main(int argc, char **argv)
 {

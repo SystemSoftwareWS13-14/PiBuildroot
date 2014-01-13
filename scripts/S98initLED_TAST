@@ -1,13 +1,13 @@
 #!/bin/sh
 
 #TASTER
-TAST_GPIO=17
+TAST_GPIO=25
 
 echo "$TAST_GPIO" > /sys/class/gpio/export
 echo "in" > sys/class/gpio/gpio$TAST_GPIO/direction
 
 #LED
-LED_GPIO=25
+LED_GPIO=18
 
 echo "$LED_GPIO" > /sys/class/gpio/export
 echo "out" > /sys/class/gpio/gpio$LED_GPIO/direction
