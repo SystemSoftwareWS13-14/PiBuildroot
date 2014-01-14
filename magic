@@ -11,8 +11,6 @@ SSH_IP="141.37.31.27"
 
 CONFIG_DIR="../configs"
 SAV_BR_CONFIG="$CONFIG_DIR/br.config"
-APP_SRC="../app/src"
-SCRIPTS_DIR="../scripts"
 
 #--------Script-------
 
@@ -66,15 +64,26 @@ repack()
 rmPack()
 {
 	rm -f dl/jefa_web.tar.gz
+	rm -f dl/jefa_gpio.tar.gz
 
 	rm -f -r output/build/jefa_web-1.0/
+	rm -f -r output/build/jefa_gpio-1.0/
 }
 
 pack()
 {
-        cd ../website
-        tar -czf jefa_web.tar.gz src
-        cd ../$ROOT_DIR
+	mkdir -p ../myPackages
+	cd ../website
+        tar -czf ../myPackages/jefa_web.tar.gz src
+
+	cd ../myPackages
+	mkdir -p package_tmp/app package_tmp/driver
+	cp -r ../driver/src package_tmp/driver
+	cp -r ../app/src package_tmp/app
+	tar -czf jefa_gpio.tar.gz package_tmp
+	rm -r package_tmp
+
+	cd ../$ROOT_DIR
 }
 
 copy()
@@ -97,12 +106,12 @@ live()
 install()
 {
 	#install apps
-	cd ../app/src
-	make install
+	#cd ../app/src
+	#make install
 
 	#install modules
-	cd ../../driver/src
-	make install
+	#cd ../../driver/src
+	#make install
 
 	#copy scripts
 	cd ../../scripts
